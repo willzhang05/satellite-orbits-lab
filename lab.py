@@ -7,15 +7,14 @@ FOV_WIDTH = 1800
 PERIOD = 102
 DIAMETER = 7917.5
 RADIUS = DIAMETER / 2
-LATITUDE = 39
 E_VELOCITY = (2 * math.pi) / 1440
 
 
 class Point():
     def __init__(self, name, latitude, longitude):
         self.name = name
-        self.latitude = latitude
-        self.longitude = longitude
+        self.latitude = latitude * math.pi / 180
+        self.longitude = longitude * math.pi / 180
         self.radius = RADIUS * math.cos(self.latitude)
 
         self.x = self.radius * math.cos(self.longitude)
@@ -34,16 +33,16 @@ class Point():
 
 class Satellite():
     def __init__(self, latitude, longitude, altitude, period, fov_width):
-        self.latitude = latitude
-        self.longitude = longitude
+        self.latitude = latitude * math.pi / 180
+        self.longitude = longitude * math.pi / 180
         self.fov_width = fov_width
         self.altitude = altitude
+        self.period = period
         self.orbital_radius = self.altitude + RADIUS
-        self.angular_velocity = (2 * math.pi) / period
     
         self.x = self.orbital_radius * math.cos(self.longitude)
-        self.y = self.orbital_radius * math.sin(self.longitude)
-        self.z = RADIUS * math.sin(self.latitude)
+        self.y = RADIUS * math.sin(self.longitude)
+        self.z = self.orbital_radius * math.sin(self.latitude)
 
     def __str__(self):
         #return str((self.x, self.y, self.z, self.period, self.fov_width, self.orbital_radius, self.angular_velocity))
@@ -60,7 +59,8 @@ class Satellite():
         ptx,pty,ptz = point.get_coords()
         satx,saty,satz = self.get_coords()
         d = dist(ptx, pty, ptz, satx, saty, satz)
-        return d <= math.sqrt((self.fov_width / 2)**2 + (self.altitude)**2)
+        max_d = (RADIUS + self.altitude - (RADIUS * math.cos(self.fov_width / RADIUS))) / math.sin(self.fov_width / RADIUS)
+        return d <= max_d
 
 
 def dist(x1, y1, z1, x2, y2, z2):
@@ -74,8 +74,9 @@ def run(sat, pt):
 
         print(sat.is_visible(pt))
         print("DC: ", pt.get_coords())
-        sat.x += sat.orbital_radius * math.cos(sat.angular_velocity * t)
-        sat.z += sat.orbital_radius * math.sin(sat.angular_velocity * t)
+        sat_angular_velocity = (2 * math.pi) / sat.period
+        sat.x += sat.orbital_radius * math.cos(sat_angular_velocity * t)
+        sat.z += sat.orbital_radius * math.sin(sat_angular_velocity * t)
         print("Sat: ", sat.get_coords())
         print(dist(pt.x, pt.y, pt.z, sat.x, sat.y, sat.z))
 
