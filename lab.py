@@ -4,10 +4,10 @@ import math
 
 ALTITUDE = 534
 FOV_WIDTH = 1800
-PERIOD = 102
+PERIOD = 1440
 DIAMETER = 7917.5
 RADIUS = DIAMETER / 2
-E_VELOCITY = (2 * math.pi) / 1440
+E_VELOCITY = (2 * math.pi) / PERIOD
 
 
 class Point():
@@ -29,7 +29,7 @@ class Point():
 
     def get_coords(self):
         return (self.x, self.y, self.z)
-            
+
 
 class Satellite():
     def __init__(self, latitude, longitude, altitude, period, fov_width):
@@ -39,46 +39,49 @@ class Satellite():
         self.altitude = altitude
         self.period = period
         self.orbital_radius = self.altitude + RADIUS
-    
+        self.max_d =  (RADIUS + self.altitude - (RADIUS * math.cos(self.fov_width / RADIUS))) / math.sin(self.fov_width / RADIUS)
+
         self.x = self.orbital_radius * math.cos(self.longitude)
         self.y = RADIUS * math.sin(self.longitude)
         self.z = self.orbital_radius * math.sin(self.latitude)
 
     def __str__(self):
-        #return str((self.x, self.y, self.z, self.period, self.fov_width, self.orbital_radius, self.angular_velocity))
-        return str((latitude, longitude))
+        return str((self.latitude, self.longitude))
 
     def __repr__(self):
-        return str((latitude, longitude))
-        #return str((self.x, self.y, self.z, self.period, self.fov_width, self.orbital_radius, self.angular_velocity))
+        return str((self.latitude, self.longitude))
 
     def get_coords(self):
         return (self.x, self.y, self.z)
 
     def is_visible(self, point):
-        ptx,pty,ptz = point.get_coords()
-        satx,saty,satz = self.get_coords()
+        ptx, pty, ptz = point.get_coords()
+        satx, saty, satz = self.get_coords()
         d = dist(ptx, pty, ptz, satx, saty, satz)
-        max_d = (RADIUS + self.altitude - (RADIUS * math.cos(self.fov_width / RADIUS))) / math.sin(self.fov_width / RADIUS)
-        return d <= max_d
+        
+        return d <= self.max_d
 
 
 def dist(x1, y1, z1, x2, y2, z2):
-    return math.sqrt(abs(x1-x2)**2 + abs(y1-y2)**2 + abs(z1-z2)**2)
+    return math.sqrt(abs(x1 - x2)**2 + abs(y1 - y2)**2 + abs(z1 - z2)**2)
 
 
 def run(sat, pt):
+
+    print(sat.max_d)
     for t in range(PERIOD):
         pt.x += pt.radius * math.cos(E_VELOCITY * t)
         pt.y += pt.radius * math.sin(E_VELOCITY * t)
 
-        print(sat.is_visible(pt))
-        print("DC: ", pt.get_coords())
         sat_angular_velocity = (2 * math.pi) / sat.period
         sat.x += sat.orbital_radius * math.cos(sat_angular_velocity * t)
         sat.z += sat.orbital_radius * math.sin(sat_angular_velocity * t)
-        print("Sat: ", sat.get_coords())
+        print("Time: " + str(t) + " minutes", sat.is_visible(pt))
+        
+        #print("Sat: ", sat.get_coords())
+        #print("DC: ", pt.get_coords())
         print(dist(pt.x, pt.y, pt.z, sat.x, sat.y, sat.z))
+
 
 def main():
     lt = 38.9072
@@ -87,6 +90,7 @@ def main():
     dc = Point("Washington DC", lt, lg)
     run(sat, dc)
     return 0
+
 
 if __name__ == '__main__':
     main()
