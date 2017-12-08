@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 # William Zhang
 import math
+from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 
 ALTITUDE = 534
 FOV_WIDTH = 1800
@@ -67,7 +70,14 @@ def dist(x1, y1, z1, x2, y2, z2):
 
 
 def run(sat, pt):
-
+    dists = []
+    ts = []
+    xp = []
+    yp = []
+    zp = []
+    xs = []
+    ys = []
+    zs = []
     print(sat.max_d)
     for t in range(PERIOD):
         pt.x += pt.radius * math.cos(E_VELOCITY * t)
@@ -80,7 +90,37 @@ def run(sat, pt):
         
         #print("Sat: ", sat.get_coords())
         #print("DC: ", pt.get_coords())
-        print(dist(pt.x, pt.y, pt.z, sat.x, sat.y, sat.z))
+        d = dist(pt.x, pt.y, pt.z, sat.x, sat.y, sat.z)
+        #print(d)
+        # DATA COLLECTION #
+        dists.append(d)
+        ts.append(t)
+        xp.append(pt.x)
+        yp.append(pt.y)
+        zp.append(pt.z)
+
+        xs.append(sat.x)
+        ys.append(sat.y)
+        zs.append(sat.z)
+        
+    #plt.plot(ts, xs, zs)
+    #plt.xlabel("Time (min)")
+    #plt.ylabel("Distance between Satellite and Point (miles)")
+    #plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    xp = np.asarray(xp)
+    yp = np.asarray(yp)
+    zp = np.asarray(zp)
+
+    ax.plot(xp, yp, zp)
+    xs = np.asarray(xs)
+    ys = np.asarray(ys)
+    zs = np.asarray(zs)
+
+    ax.plot(xs, ys, zs)
+
+    plt.show()
 
 
 def main():
