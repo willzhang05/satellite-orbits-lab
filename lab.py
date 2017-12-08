@@ -86,7 +86,7 @@ def run(sat, pt):
 def main():
     lt = 38.9072
     lg = -77.0369
-    sat = Satellite(lt, lg, ALTITUDE, PERIOD, FOV_WIDTH)
+    sat = Satellite(lt, lg, ALTITUDE, 102, FOV_WIDTH)
     dc = Point("Washington DC", lt, lg)
     run(sat, dc)
     return 0
