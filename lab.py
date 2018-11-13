@@ -19,9 +19,10 @@ class Point():
         self.latitude = latitude * math.pi / 180
         self.longitude = longitude * math.pi / 180
         self.radius = RADIUS * math.cos(self.latitude)
+        print(self.radius)
 
-        self.x = self.radius * math.cos(self.longitude)
-        self.y = self.radius * math.sin(self.longitude)
+        self.x = self.radius * math.cos(0)
+        self.y = self.radius * math.sin(0)
         self.z = RADIUS * math.sin(self.latitude)
 
     def __str__(self):
@@ -39,14 +40,14 @@ class Satellite():
         self.latitude = latitude * math.pi / 180
         self.longitude = longitude * math.pi / 180
         self.fov_width = fov_width
-        self.altitude = altitude
+        #self.altitude = altitude
         self.period = period
-        self.orbital_radius = self.altitude + RADIUS
-        self.max_d =  (RADIUS + self.altitude - (RADIUS * math.cos(self.fov_width / RADIUS))) / math.sin(self.fov_width / RADIUS)
-
-        self.x = self.orbital_radius * math.cos(self.longitude)
-        self.y = RADIUS * math.sin(self.longitude)
-        self.z = self.orbital_radius * math.sin(self.latitude)
+        #self.orbital_radius = self.altitude + RADIUS
+        #self.max_d =  (RADIUS + self.altitude - (RADIUS * math.cos(self.fov_width / RADIUS))) / math.sin(self.fov_width / RADIUS)
+        print(RADIUS)
+        self.x = RADIUS * math.cos(self.latitude)
+        self.y = RADIUS * math.sin(0)
+        self.z = RADIUS * math.sin(self.latitude)
 
     def __str__(self):
         return str((self.latitude, self.longitude))
@@ -60,14 +61,26 @@ class Satellite():
     def is_visible(self, point):
         ptx, pty, ptz = point.get_coords()
         satx, saty, satz = self.get_coords()
-        d = dist(ptx, pty, ptz, satx, saty, satz)
+        d = dist(pty, ptx, saty, satx)
         
-        return d <= self.max_d
+        return d <= (self.fov_width / 2)
 
 
-def dist(x1, y1, z1, x2, y2, z2):
-    return math.sqrt(abs(x1 - x2)**2 + abs(y1 - y2)**2 + abs(z1 - z2)**2)
+#def dist(x1, y1, z1, x2, y2, z2):
+#    return math.sqrt(abs(x1 - x2)**2 + abs(y1 - y2)**2 + abs(z1 - z2)**2)
 
+def dist(y1, x1, y2, x2):
+    y1 = float(y1)
+    x1 = float(x1)
+    y2 = float(y2)
+    x2 = float(x2)
+    #R = 3958.76  # miles
+    y1 *= math.pi / 180.0
+    x1 *= math.pi / 180.0
+    y2 *= math.pi / 180.0
+    x2 *= math.pi / 180.0
+    # approximate great circle distance with law of cosines
+    return math.acos(math.sin(y1) * math.sin(y2) + math.cos(y1) * math.cos(y2) * math.cos(x2 - x1)) * RADIUS
 
 def run(sat, pt):
     dists = []
@@ -78,20 +91,20 @@ def run(sat, pt):
     xs = []
     ys = []
     zs = []
-    print(sat.max_d)
     for t in range(PERIOD):
-        pt.x += pt.radius * math.cos(E_VELOCITY * t)
-        pt.y += pt.radius * math.sin(E_VELOCITY * t)
+        pt.x = pt.radius * math.cos(E_VELOCITY * t)
+        pt.y = pt.radius * math.sin(E_VELOCITY * t)
 
         sat_angular_velocity = (2 * math.pi) / sat.period
-        sat.x += sat.orbital_radius * math.cos(sat_angular_velocity * t)
-        sat.z += sat.orbital_radius * math.sin(sat_angular_velocity * t)
+        
+        sat.x += RADIUS * math.cos(sat_angular_velocity * t - sat.latitude)
+        sat.z += RADIUS * -1 * math.sin(sat_angular_velocity * t - sat.latitude)
         print("Time: " + str(t) + " minutes", sat.is_visible(pt))
         
         #print("Sat: ", sat.get_coords())
         #print("DC: ", pt.get_coords())
-        d = dist(pt.x, pt.y, pt.z, sat.x, sat.y, sat.z)
-        #print(d)
+        d = dist(pt.y, pt.x, sat.y, sat.x)
+        print(d)
         # DATA COLLECTION #
         dists.append(d)
         ts.append(t)
@@ -107,8 +120,10 @@ def run(sat, pt):
     #plt.xlabel("Time (min)")
     #plt.ylabel("Distance between Satellite and Point (miles)")
     #plt.show()
+    blank = [0] * len(ts)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
+
     xp = np.asarray(xp)
     yp = np.asarray(yp)
     zp = np.asarray(zp)
@@ -119,7 +134,6 @@ def run(sat, pt):
     zs = np.asarray(zs)
 
     ax.plot(xs, ys, zs)
-
     plt.show()
 
 
